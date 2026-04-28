@@ -1,373 +1,152 @@
-import { useState } from "react";
-import { FaWhatsapp, FaCommentDots, FaTimes, FaPaperPlane, FaUser } from "react-icons/fa";
+import { useState, useRef, useEffect } from "react";
+import { FaWhatsapp, FaCommentDots, FaTimes, FaPaperPlane, FaUser, FaRobot } from "react-icons/fa";
+import { useTheme } from "../context/ThemeContext";
 
 const PRIMARY_YELLOW = "#FFE11A";
 const ACCENT_PURPLE = "#4A154B";
 
+const QUICK_REPLIES = ["Free quote", "Areas served?", "Same day?", "Pricing?"];
+const BOT = {
+  "free quote": "Call (904) 430-3838 or fill our contact form — we reply within 2 hours! 📞",
+  "areas served": "Rhea, Meigs, Bledsoe, Roane, McMinn & Bradley counties 🗺️",
+  "same day": "Yes! Same-day & next-day available. Call to check! ⚡",
+  "pricing": "By volume — pay only for space your junk takes. No hidden fees! 💰",
+};
+
 const FloatingButtons = () => {
-  const [chatOpen, setChatOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      from: "bot",
-      text: "👋 Hey there! Need junk gone? Ask us anything — we're here to help!",
-    },
-  ]);
+  const { darkMode } = useTheme();
+  const [open, setOpen] = useState(false);
+  const [msg, setMsg] = useState([{ from: "bot", text: "👋 Need junk gone? Ask us anything!" }]);
   const [input, setInput] = useState("");
+  const bodyRef = useRef(null);
 
-  const quickReplies = [
-    "Get a free quote",
-    "What areas do you serve?",
-    "Same day service?",
-    "How pricing works",
-  ];
+  // Auto-scroll
+  useEffect(() => { if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight; }, [msg]);
 
-  const botResponses = {
-    "get a free quote":
-      "Sure! Call us at (904) 430-3838 or fill out our contact form. We'll get back to you within 2 hours! 📞",
-    "what areas do you serve":
-      "We proudly serve Rhea, Meigs, Bledsoe, Roane, McMinn, and Bradley counties in Southeast Tennessee! 🗺️",
-    "same day service":
-      "Yes! We offer same-day and next-day service in most cases. Call now to check availability! ⚡",
-    "how pricing works":
-      "We charge by volume — you only pay for the space your junk takes up in our truck. No hidden fees, upfront pricing! 💰",
-  };
-
-  const handleSend = (text) => {
-    const msgToSend = text || input.trim();
-    if (!msgToSend) return;
-
-    setMessages((prev) => [...prev, { from: "user", text: msgToSend }]);
+  const send = (text) => {
+    const txt = (text || input.trim());
+    if (!txt) return;
+    setMsg((p) => [...p, { from: "user", text: txt }]);
     setInput("");
-
     setTimeout(() => {
-      const lowerMsg = msgToSend.toLowerCase();
-      let reply =
-        "Thanks for your message! For immediate help, call us at (904) 430-3838. We're available Mon-Sat, 7AM-7PM! 📞";
-
-      Object.keys(botResponses).forEach((key) => {
-        if (lowerMsg.includes(key)) {
-          reply = botResponses[key];
-        }
-      });
-
-      setMessages((prev) => [...prev, { from: "bot", text: reply }]);
-    }, 600);
+      const key = Object.keys(BOT).find((k) => txt.toLowerCase().includes(k));
+      setMsg((p) => [...p, { from: "bot", text: BOT[key] || "Call (904) 430-3838 for immediate help! 📞" }]);
+    }, 500);
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") handleSend();
+  const d = darkMode;
+  const c = {
+    bg: d ? "#1A1A1A" : "#fff",
+    body: d ? "#141414" : "#F7F7F5",
+    header: ACCENT_PURPLE,
+    botBg: d ? "#252525" : "#fff",
+    botBorder: d ? "#333" : "#E8E5DF",
+    botText: d ? "#CCC" : "#333",
+    userBg: PRIMARY_YELLOW,
+    userText: "#1A1A1A",
+    inputBg: d ? "#252525" : "#fff",
+    inputBorder: d ? "#333" : "#DDD",
+    quickBg: d ? "#1A1A1A" : "#fff",
+    quickBorder: d ? "#333" : "#EEE",
+    quickBtnBg: d ? "#252525" : "#fff",
+    quickBtnBorder: d ? "#444" : "#DDD",
+    quickBtnText: d ? "#AAA" : "#555",
   };
 
   return (
     <>
-      {/* ═══════════════ INLINE STYLES (No external CSS dependency) ═══════════════ */}
       <style>{`
-        .fb-container {
-          position: fixed !important;
-          bottom: 24px !important;
-          right: 24px !important;
-          z-index: 99999 !important;
-          display: flex !important;
-          flex-direction: column !important;
-          gap: 14px !important;
-          align-items: flex-end !important;
-        }
+        .fb-root { position:fixed; bottom:24px; right:24px; z-index:99999; display:flex; flex-direction:column; gap:12px; align-items:flex-end; }
+        .fb-btn { width:52px; height:52px; border-radius:50%; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:22px; color:#fff; text-decoration:none; box-shadow:0 6px 20px rgba(0,0,0,0.25); transition:all 0.3s; position:relative; }
+        .fb-btn:hover { transform:translateY(-3px) scale(1.06); }
+        .fb-btn:active { transform:scale(0.94); }
+        .fb-wa { background:#25D366; }
+        .fb-wa:hover { background:#1DA851; box-shadow:0 8px 28px rgba(37,211,102,0.5); }
+        .fb-ch { background:${ACCENT_PURPLE}; }
+        .fb-ch:hover { background:#3A103B; box-shadow:0 8px 28px rgba(74,21,75,0.5); }
+        .fb-ch.open { background:#E74C3C; }
+        .fb-ch.open:hover { background:#C0392B; }
 
-        .fb-btn {
-          width: 56px !important;
-          height: 56px !important;
-          border-radius: 50% !important;
-          border: none !important;
-          cursor: pointer !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          font-size: 26px !important;
-          color: #fff !important;
-          text-decoration: none !important;
-          box-shadow: 0 6px 24px rgba(0,0,0,0.2) !important;
-          transition: all 0.3s ease !important;
-          position: relative !important;
-        }
-        .fb-btn:hover {
-          transform: translateY(-3px) scale(1.05) !important;
-        }
+        .fb-win { width:340px; max-height:440px; border-radius:18px; box-shadow:0 16px 48px rgba(0,0,0,0.25); overflow:hidden; display:flex; flex-direction:column; animation:fbSlide 0.3s ease-out; }
+        @keyframes fbSlide { from { opacity:0; transform:translateY(16px) scale(0.95); } to { opacity:1; transform:translateY(0) scale(1); } }
 
-        .fb-whatsapp {
-          background: #25D366 !important;
-        }
-        .fb-whatsapp:hover {
-          background: #1DA851 !important;
-        }
+        .fb-hdr { padding:14px 16px; display:flex; align-items:center; justify-content:space-between; }
+        .fb-hdr-l { display:flex; align-items:center; gap:10px; }
+        .fb-av { width:36px; height:36px; border-radius:50%; background:${PRIMARY_YELLOW}; display:flex; align-items:center; justify-content:center; color:#1A1A1A; font-size:15px; }
+        .fb-hdr-t { font-weight:700; font-size:14px; font-family:sans-serif; }
+        .fb-hdr-s { font-size:10px; opacity:0.7; display:flex; align-items:center; gap:4px; }
+        .fb-dot { width:6px; height:6px; border-radius:50%; background:#2ECC71; }
+        .fb-cls { background:none; border:none; color:#fff; font-size:16px; cursor:pointer; padding:4px 8px; border-radius:4px; opacity:0.7; }
+        .fb-cls:hover { opacity:1; background:rgba(255,255,255,0.12); }
 
-        .fb-chat {
-          background: #4A154B !important;
-        }
-        .fb-chat:hover {
-          background: #3A103B !important;
-        }
-        .fb-chat.open {
-          background: #E74C3C !important;
-        }
+        .fb-body { flex:1; overflow-y:auto; padding:10px 12px; display:flex; flex-direction:column; gap:6px; max-height:240px; }
+        .fb-body::-webkit-scrollbar { width:3px; }
+        .fb-body::-webkit-scrollbar-thumb { background:#CCC; border-radius:3px; }
+        .fb-m { max-width:84%; padding:8px 12px; border-radius:12px; font-size:12px; line-height:1.5; font-family:sans-serif; animation:fbPop 0.25s ease-out; }
+        @keyframes fbPop { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+        .fb-m.bot { align-self:flex-start; border-bottom-left-radius:2px; }
+        .fb-m.user { align-self:flex-end; border-bottom-right-radius:2px; font-weight:500; }
 
-        /* Chat Window */
-        .fb-chat-window {
-          width: 340px !important;
-          max-height: 460px !important;
-          background: #fff !important;
-          border-radius: 16px !important;
-          box-shadow: 0 12px 40px rgba(0,0,0,0.2) !important;
-          overflow: hidden !important;
-          display: flex !important;
-          flex-direction: column !important;
-          margin-bottom: 6px !important;
-        }
+        .fb-q { display:flex; flex-wrap:wrap; gap:5px; padding:8px 10px; border-top:1px solid; }
+        .fb-qb { padding:5px 10px; border-radius:999px; border:1px solid; font-size:10px; cursor:pointer; font-family:sans-serif; transition:all 0.2s; }
+        .fb-qb:hover { background:${PRIMARY_YELLOW}; border-color:${PRIMARY_YELLOW}; color:#1A1A1A; }
 
-        .fb-chat-header {
-          background: #4A154B !important;
-          color: #fff !important;
-          padding: 14px 16px !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: space-between !important;
-        }
-        .fb-chat-header-left {
-          display: flex !important;
-          align-items: center !important;
-          gap: 10px !important;
-        }
-        .fb-avatar {
-          width: 38px !important;
-          height: 38px !important;
-          border-radius: 50% !important;
-          background: #FFE11A !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          color: #1A1A1A !important;
-          font-size: 16px !important;
-        }
-        .fb-chat-title {
-          font-weight: 700 !important;
-          font-size: 15px !important;
-          font-family: sans-serif !important;
-        }
-        .fb-online {
-          font-size: 11px !important;
-          color: rgba(255,255,255,0.7) !important;
-          display: flex !important;
-          align-items: center !important;
-          gap: 4px !important;
-        }
-        .fb-online-dot {
-          width: 7px !important;
-          height: 7px !important;
-          border-radius: 50% !important;
-          background: #2ECC71 !important;
-        }
-        .fb-close-btn {
-          background: none !important;
-          border: none !important;
-          color: #fff !important;
-          font-size: 18px !important;
-          cursor: pointer !important;
-          padding: 4px 8px !important;
-          border-radius: 4px !important;
-        }
-        .fb-close-btn:hover {
-          background: rgba(255,255,255,0.15) !important;
-        }
+        .fb-in { display:flex; align-items:center; gap:5px; padding:8px 10px; border-top:1px solid; }
+        .fb-inp { flex:1; border:1px solid; border-radius:999px; padding:8px 12px; font-size:12px; outline:none; font-family:sans-serif; }
+        .fb-snd { width:34px; height:34px; border-radius:50%; background:${PRIMARY_YELLOW}; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#1A1A1A; font-size:13px; flex-shrink:0; transition:all 0.2s; }
+        .fb-snd:hover { background:${ACCENT_PURPLE}; color:#fff; }
 
-        .fb-chat-body {
-          flex: 1 !important;
-          overflow-y: auto !important;
-          padding: 12px 14px !important;
-          display: flex !important;
-          flex-direction: column !important;
-          gap: 8px !important;
-          max-height: 250px !important;
-          background: #F7F7F5 !important;
-        }
-
-        .fb-msg {
-          max-width: 82% !important;
-          padding: 10px 14px !important;
-          border-radius: 14px !important;
-          font-size: 13px !important;
-          line-height: 1.5 !important;
-          font-family: sans-serif !important;
-        }
-        .fb-msg.bot {
-          background: #fff !important;
-          border: 1px solid #E8E5DF !important;
-          align-self: flex-start !important;
-          color: #333 !important;
-        }
-        .fb-msg.user {
-          background: #FFE11A !important;
-          align-self: flex-end !important;
-          color: #1A1A1A !important;
-          font-weight: 500 !important;
-        }
-
-        .fb-quick-replies {
-          display: flex !important;
-          flex-wrap: wrap !important;
-          gap: 6px !important;
-          padding: 8px 12px !important;
-          background: #fff !important;
-          border-top: 1px solid #EEE !important;
-        }
-        .fb-quick-btn {
-          padding: 6px 12px !important;
-          border-radius: 999px !important;
-          border: 1px solid #DDD !important;
-          background: #fff !important;
-          font-size: 11px !important;
-          cursor: pointer !important;
-          color: #555 !important;
-          font-family: sans-serif !important;
-        }
-        .fb-quick-btn:hover {
-          background: #FFE11A !important;
-          border-color: #FFE11A !important;
-          color: #1A1A1A !important;
-        }
-
-        .fb-input-wrap {
-          display: flex !important;
-          align-items: center !important;
-          gap: 6px !important;
-          padding: 10px 12px !important;
-          background: #fff !important;
-          border-top: 1px solid #EEE !important;
-        }
-        .fb-input {
-          flex: 1 !important;
-          border: 1px solid #DDD !important;
-          border-radius: 999px !important;
-          padding: 10px 14px !important;
-          font-size: 13px !important;
-          outline: none !important;
-          font-family: sans-serif !important;
-        }
-        .fb-input:focus {
-          border-color: #FFE11A !important;
-        }
-        .fb-send-btn {
-          width: 38px !important;
-          height: 38px !important;
-          border-radius: 50% !important;
-          background: #FFE11A !important;
-          border: none !important;
-          cursor: pointer !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          color: #1A1A1A !important;
-          font-size: 14px !important;
-        }
-
-        @media (max-width: 480px) {
-          .fb-container {
-            bottom: 14px !important;
-            right: 14px !important;
-          }
-          .fb-btn {
-            width: 48px !important;
-            height: 48px !important;
-            font-size: 22px !important;
-          }
-          .fb-chat-window {
-            width: calc(100vw - 28px) !important;
-            max-width: 340px !important;
-          }
+        @media(max-width:480px) {
+          .fb-root { bottom:12px; right:12px; gap:10px; }
+          .fb-btn { width:44px; height:44px; font-size:19px; }
+          .fb-win { width:calc(100vw - 24px); max-width:340px; }
         }
       `}</style>
 
-      {/* ═══════════════ FLOATING BUTTONS ═══════════════ */}
-      <div className="fb-container">
-        {/* Chat Window */}
-        {chatOpen && (
-          <div className="fb-chat-window">
-            {/* Header */}
-            <div className="fb-chat-header">
-              <div className="fb-chat-header-left">
-                <div className="fb-avatar">
-                  <FaUser />
-                </div>
+      <div className="fb-root">
+        {open && (
+          <div className="fb-win" style={{ background: c.bg }}>
+            <div className="fb-hdr" style={{ background: c.header, color: "#fff" }}>
+              <div className="fb-hdr-l">
+                <div className="fb-av"><FaRobot /></div>
                 <div>
-                  <div className="fb-chat-title">Junk R Us</div>
-                  <div className="fb-online">
-                    <span className="fb-online-dot" />
-                    Online — replies fast
-                  </div>
+                  <div className="fb-hdr-t">Junk R Us</div>
+                  <div className="fb-hdr-s"><span className="fb-dot" />Online now</div>
                 </div>
               </div>
-              <button className="fb-close-btn" onClick={() => setChatOpen(false)}>
-                <FaTimes />
-              </button>
+              <button className="fb-cls" onClick={() => setOpen(false)}><FaTimes /></button>
             </div>
-
-            {/* Messages */}
-            <div className="fb-chat-body">
-              {messages.map((msg, i) => (
-                <div key={i} className={`fb-msg ${msg.from}`}>
-                  {msg.text}
+            <div className="fb-body" ref={bodyRef} style={{ background: c.body }}>
+              {msg.map((m, i) => (
+                <div key={i} className={`fb-m ${m.from}`}
+                  style={m.from === "bot" ? { background: c.botBg, border: `1px solid ${c.botBorder}`, color: c.botText } : { background: c.userBg, color: c.userText }}>
+                  {m.text}
                 </div>
               ))}
             </div>
-
-            {/* Quick Replies */}
-            <div className="fb-quick-replies">
-              {quickReplies.map((qr, i) => (
-                <button
-                  key={i}
-                  className="fb-quick-btn"
-                  onClick={() => handleSend(qr)}
-                >
-                  {qr}
-                </button>
+            <div className="fb-q" style={{ background: c.quickBg, borderTopColor: c.quickBorder }}>
+              {QUICK_REPLIES.map((q, i) => (
+                <button key={i} className="fb-qb" onClick={() => send(q)}
+                  style={{ background: c.quickBtnBg, borderColor: c.quickBtnBorder, color: c.quickBtnText }}>{q}</button>
               ))}
             </div>
-
-            {/* Input */}
-            <div className="fb-input-wrap">
-              <input
-                type="text"
-                className="fb-input"
-                placeholder="Type a message..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-              />
-              <button className="fb-send-btn" onClick={() => handleSend()}>
-                <FaPaperPlane />
-              </button>
+            <div className="fb-in" style={{ background: c.bg, borderTopColor: c.quickBorder }}>
+              <input className="fb-inp" placeholder="Type..." value={input}
+                style={{ background: c.inputBg, borderColor: c.inputBorder, color: c.botText }}
+                onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} />
+              <button className="fb-snd" onClick={() => send()}><FaPaperPlane /></button>
             </div>
           </div>
         )}
 
-        {/* ═══ WHATSAPP BUTTON ═══ */}
-        <a
-          href="https://wa.me/19044303838?text=Hi%20Junk%20R%20Us!%20I%20need%20help%20with%20junk%20removal."
-          target="_blank"
-          rel="noopener noreferrer"
-          className="fb-btn fb-whatsapp"
-          title="Chat on WhatsApp"
-          aria-label="Chat on WhatsApp"
-        >
+        <a href="https://wa.me/19044303838?text=Hi%20Junk%20R%20Us!%20I%20need%20help%20with%20junk%20removal."
+          target="_blank" rel="noopener noreferrer" className="fb-btn fb-wa" title="WhatsApp">
           <FaWhatsapp />
         </a>
 
-        {/* ═══ CHAT BUTTON ═══ */}
-        <button
-          className={`fb-btn fb-chat ${chatOpen ? "open" : ""}`}
-          onClick={() => setChatOpen(!chatOpen)}
-          title={chatOpen ? "Close chat" : "Chat with us"}
-          aria-label={chatOpen ? "Close chat" : "Chat with us"}
-        >
-          {chatOpen ? <FaTimes /> : <FaCommentDots />}
+        <button className={`fb-btn fb-ch ${open ? "open" : ""}`} onClick={() => setOpen(!open)}
+          title={open ? "Close" : "Chat"}>
+          {open ? <FaTimes /> : <FaCommentDots />}
         </button>
       </div>
     </>
