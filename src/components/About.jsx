@@ -560,7 +560,7 @@ const About = () => {
 
               <div className={`fade-up d2 ${whyInView ? "visible" : ""}`} style={{ position: "relative" }}>
                 <img
-                  src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&q=80"
+                  src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80"
                   alt="Junk removal service"
                   style={{ width: "100%", borderRadius: "28px", height: "400px", objectFit: "cover" }}
                 />
