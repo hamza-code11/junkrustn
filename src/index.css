@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@theme {
+  --color-jru-yellow: #FFE11A;
+  --color-jru-purple: #4A154B;
+  --color-jru-purple-light: #6B2F6D;
+}
+
+html { scroll-behavior: smooth; }
